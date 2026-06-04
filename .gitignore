@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+git rm -r --cached .
+# ambientes virtuais
+venv/
+.env/
+.env
+*.log
+*.tmp
