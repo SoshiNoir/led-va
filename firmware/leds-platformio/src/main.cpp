@@ -2,6 +2,7 @@
 #include <ESP8266WebServer.h>
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoOTA.h>
+#include <Arduino.h>
 
 const char* ssid = "asdf";
 const char* password = "rockroll";
@@ -20,73 +21,21 @@ int r1, g1, b1;
 int r2, g2, b2;
 int r3, g3, b3;
 
-int offset_anim = 0;
-unsigned long lastUpdate = 0;
-int waitMs_global = 50;
+int animationOffset = 0;
+unsigned long lastUpdateMs = 0;
+int globalWaitMs = 50;
 
-bool trianim_ativo = false;
 
 // =======================
 // BASE
 // =======================
 
 void setColor(int r, int g, int b){
-  trianim_ativo = false; // 👈 para animação
   for(int i = 0; i < NUM_LEDS; i++){
     strip.setPixelColor(i, strip.Color(r, g, b));
   }
   strip.show();
 }
-
-// =======================
-// ANIMAÇÃO
-// =======================
-
-void startTrianim(int waitMs){
-  waitMs_global = waitMs;
-  trianim_ativo = true;
-
-  r1 = random(0,256); g1 = random(0,256); b1 = random(0,256);
-  r2 = random(0,256); g2 = random(0,256); b2 = random(0,256);
-  r3 = random(0,256); g3 = random(0,256); b3 = random(0,256);
-}
-
-void updateTrianim(){
-
-  if (!trianim_ativo) return;
-
-  if (millis() - lastUpdate < waitMs_global) return;
-  lastUpdate = millis();
-
-  int section = NUM_LEDS / 3;
-
-  if (random(0,100) < 5){
-    r1 = random(0,256); g1 = random(0,256); b1 = random(0,256);
-    r2 = random(0,256); g2 = random(0,256); b2 = random(0,256);
-    r3 = random(0,256); g3 = random(0,256); b3 = random(0,256);
-  }
-
-  for(int i = 0; i < NUM_LEDS; i++){
-
-    int pos = (i + offset_anim) % NUM_LEDS;
-
-    if(pos < section){
-      strip.setPixelColor(i, strip.Color(r1, g1, b1));
-    }
-    else if(pos < section * 2){
-      strip.setPixelColor(i, strip.Color(r2, g2, b2));
-    }
-    else{
-      strip.setPixelColor(i, strip.Color(r3, g3, b3));
-    }
-  }
-
-  strip.show();
-
-  offset_anim++;
-  if(offset_anim >= NUM_LEDS) offset_anim = 0;
-}
-
 
 // HANDLERS
 
@@ -108,27 +57,23 @@ void handlePink(){ setColor(255,20,147); server.send(200,"text/plain","pink"); }
 void handleGold(){ setColor(255,215,0); server.send(200,"text/plain","gold"); }
 void handleLavender(){ setColor(126,21,255); server.send(200,"text/plain","lavender"); }
 void handleIceBlue(){ setColor(120,200,255); server.send(200,"text/plain","iceblue"); }
+void handleFire(){ setColor(228, 138, 0); server.send(200,"text/plain","fire"); }
 
-void handleTriAnim(){
-  startTrianim(30);
-  server.send(200, "text/plain", "trianim on");
-}
-
-void handleGradient(){
-  trianim_ativo = false;
-
-  for(int i = 0; i < NUM_LEDS; i++){
-    float ratio = (float)i / (NUM_LEDS - 1);
-
-    int r = 255 * (1 - ratio);
-    int b = 255 * ratio;
-
-    strip.setPixelColor(i, strip.Color(r, 0, b));
+void handleBright(){
+  if (!server.hasArg("value")) {
+    server.send(400, "text/plain", "missing value");
+    return;
   }
 
+  int brightness = server.arg("value").toInt();
+  brightness = constrain(brightness, 0, 255);
+
+  strip.setBrightness(brightness);
   strip.show();
-  server.send(200, "text/plain", "gradient");
+
+  server.send(200, "text/plain", "bright");
 }
+
 
 
 // SETUP
@@ -138,7 +83,6 @@ void setup(){
   Serial.begin(115200);
 
   strip.begin();
-  strip.setBrightness(80);
   strip.show();
 
   WiFi.begin(ssid, password);
@@ -149,6 +93,8 @@ void setup(){
   ArduinoOTA.begin();
 
   server.on("/", handleRoot);
+
+  server.on("/bright", handleBright);
 
   server.on("/red", handleRed);
   server.on("/green", handleGreen);
@@ -165,11 +111,8 @@ void setup(){
   server.on("/gold", handleGold);
   server.on("/lavender", handleLavender);
   server.on("/iceblue", handleIceBlue);
+  server.on("/fire", handleFire);
 
-
-//animaçoes
-  server.on("/grade", handleGradient);
-  server.on("/vamos", handleTriAnim);
   server.begin();
 }
 
@@ -180,5 +123,4 @@ void setup(){
 void loop(){
   ArduinoOTA.handle();
   server.handleClient();
-  updateTrianim(); // 👈 roda a animação SEM travar
 }
