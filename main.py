@@ -1,14 +1,12 @@
 import os
 import time
 import winsound
-
 import pvporcupine
 import pyaudio
 import speech_recognition as sr
 from dotenv import load_dotenv
-
 from led_client import send_brightness_command
-from led_client import send_led_command
+from led_client import send_triad
 from speech import listen_for_command
 from wakeword import detect_wakeword
 
@@ -45,7 +43,6 @@ mic = sr.Microphone()
 print("Calibrating microphone...")
 with mic as source:
     recognizer.adjust_for_ambient_noise(source, duration=1)
-
 print("System ready.")
 
 
@@ -70,7 +67,7 @@ while True:
         if transcript:
             print("You said:", transcript)
 
-            command_sent = send_led_command(transcript, IP)
+            command_sent = send_triad(transcript, IP)
             brightness_sent = send_brightness_command(transcript, IP)
 
             if command_sent or brightness_sent:
@@ -93,5 +90,4 @@ while True:
 
             is_active_mode = True
             session_deadline = time.time() + SESSION_TIMEOUT
-
             print("Listening...")

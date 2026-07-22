@@ -1,18 +1,12 @@
-voice_commands = {
-    "vermelho": "red",
-    "verde": "green",
-    "azul": "blue",
-    "branco": "white",
-    "amarelo": "yellow",
-    "roxo": "purple",
-    "turco": "cyan",
-    "laranja": "orange",
-    "rosa": "pink",
-    "dourado": "gold",
-    "lavanda": "lavender",
-    "gelado": "iceblue",
-    "fogo": "fire",
-    "desligar": "off"
-}
 
-# cyan e white bugadassos
+commands = {
+    "brisa" : {
+    "colors" : [
+    (196,184,230),
+    (168,192,216),
+    (224,232,240)
+    ],
+    "mode" : "triad",
+    "brightness" : 50
+    }
+}

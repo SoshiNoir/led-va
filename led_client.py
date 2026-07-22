@@ -1,27 +1,6 @@
 import re
-
 import requests
-
-from commands import voice_commands
-
-
-
-
-
-
-def send_led_command(transcript, ip_address):
-    transcript = transcript.strip().lower()
-
-    for keyword, endpoint in voice_commands.items():
-        if keyword in transcript:
-            print(f"[ESP] -> {endpoint}")
-            try:
-                requests.get(f"http://{ip_address}/{endpoint}", timeout=5)
-            except:
-                print("Erro ao conectar no ESP")
-            return True
-
-    return False
+from commands import commands
 
 
 def send_brightness_command(transcript, ip_address):
@@ -36,11 +15,33 @@ def send_brightness_command(transcript, ip_address):
     brightness = int(match.group())
 
     try:
-        requests.get(f"http://{ip_address}/bright?value={brightness}", timeout=5)
+        response = requests.get(
+            f"http://{ip_address}/bright?value={brightness}",
+             timeout=5
+             )
+             
+        response.raise_for_status()
         return True
-    except:
-        print("Erro ao conectar no ESP")
+    except requests.RequestException as exc:
+        print(f"Error connecting to ESP: {exc}")
         return False
 
 
+def send_triad(transcript, ip_address):
+    transcript = transcript.strip().lower()
+    for preset_name, preset_config in commands.items():
+        if preset_name in transcript:
+            print(f"Command {preset_name} found.")
+            try:
+                response = requests.post(
+                f"http://{ip_address}/apply",
+                json=preset_config,
+                timeout=5
+                )
+                response.raise_for_status()
+                return True
+            except requests.RequestException as exc:
+                print(f"Cannot reach ESP: {exc}")
+                return False
+    return False
 
