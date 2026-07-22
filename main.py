@@ -5,8 +5,8 @@ import pvporcupine
 import pyaudio
 import speech_recognition as sr
 from dotenv import load_dotenv
-from led_client import send_brightness_command
-from led_client import send_triad
+from commands import parse_command
+from led_client import send_brightness_command, send_triad
 from speech import listen_for_command
 from wakeword import detect_wakeword
 
@@ -85,17 +85,24 @@ try:
             if transcript:
                 print("You said:", transcript)
 
-                command_sent = send_triad(transcript, IP)
-                brightness_sent = send_brightness_command(transcript, IP)
+                command_sent = False
+                for action in parse_command(transcript):
+                    if action["type"] == "end_session":
+                        is_active_mode = False
+                        start_wakeword_stream()
+                        print("Session ended by voice command.")
+                        break
 
-                if command_sent or brightness_sent:
+                    if action["type"] == "preset":
+                        command_sent = send_triad(action["name"], IP) or command_sent
+                    elif action["type"] == "brightness":
+                        command_sent = (
+                            send_brightness_command(action["value"], IP) or command_sent
+                        )
+
+                if command_sent:
                     session_deadline = time.time() + SESSION_TIMEOUT
                     print("Session renewed.")
-
-                if "parar" in transcript or "encerrar" in transcript:
-                    is_active_mode = False
-                    start_wakeword_stream()
-                    print("Session ended by voice command.")
 
         # PASSIVE MODE
         else:
