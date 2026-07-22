@@ -4,7 +4,7 @@ import tempfile
 from faster_whisper import WhisperModel
 
 
-model_size = "small.en"
+model_size = "small"
 
 model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
@@ -19,7 +19,11 @@ def listen_for_command(recognizer, mic):
             temp_wav.write(audio.get_wav_data())
             temp_wav_path = temp_wav.name
 
-        segments, _ = model.transcribe(temp_wav_path, beam_size=5)
+        segments, _ = model.transcribe(
+            temp_wav_path,
+            beam_size=5,
+            language="pt",
+        )
         transcript = " ".join(
             segment.text.strip()
             for segment in segments
